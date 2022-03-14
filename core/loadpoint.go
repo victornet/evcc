@@ -46,6 +46,7 @@ const (
 	minActiveCurrent      = 1.0 // minimum current at which a phase is treated as active
 	vehicleDetectInterval = 3 * time.Minute
 	vehicleDetectDuration = 10 * time.Minute
+	outOfSyncGracePeriod  = 10 * time.Second
 )
 
 // elapsed is the time an expired timer will be set to
@@ -572,7 +573,7 @@ func (lp *LoadPoint) Prepare(uiChan chan<- util.Param, pushChan chan<- push.Even
 func (lp *LoadPoint) syncCharger() {
 	enabled, err := lp.charger.Enabled()
 	if err == nil {
-		if enabled != lp.enabled {
+		if enabled != lp.enabled && lp.clock.Since(lp.guardUpdated) > outOfSyncGracePeriod {
 			lp.log.WARN.Printf("charger out of sync: expected %vd, got %vd", status[lp.enabled], status[enabled])
 			err = lp.charger.Enable(lp.enabled)
 		}
