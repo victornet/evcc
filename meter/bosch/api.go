@@ -105,7 +105,7 @@ func (c *API) updateValues() error {
 		return err
 	}
 
-	return extractValues(c, string(body))
+	return c.extractValues(string(body))
 }
 
 func parseWattValue(inputString string) (float64, error) {
@@ -120,7 +120,7 @@ func parseWattValue(inputString string) (float64, error) {
 	return res * 1000.0, err
 }
 
-func extractValues(c *API, body string) error {
+func (c *API) extractValues(body string) error {
 	if strings.Contains(body, "session invalid") {
 		c.logger.DEBUG.Println("extractValues: Session invalid. Performing Re-login")
 		return c.Login()
