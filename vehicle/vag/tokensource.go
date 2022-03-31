@@ -96,23 +96,25 @@ func (ts *metaTokenSource) Token() (*oauth2.Token, error) {
 }
 
 // Token returns a vag token or an error
-func (ts *metaTokenSource) TokenEx() (*Token, error) {
+func (ts *metaTokenSource) TokenEx() (token *Token, err error) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
+	if ts.ts != nil {
+		token, err = ts.ts.TokenEx()
+		if err != nil {
+			// token source doesn't work anymore, reset it
+			ts.ts = nil
+		}
+	}
+
 	if ts.ts == nil {
-		token, err := ts.newT()
+		token, err = ts.newT()
 		if err != nil {
 			return nil, err
 		}
 
 		ts.ts = ts.newTS(token)
-	}
-
-	token, err := ts.ts.TokenEx()
-	if err != nil {
-		// token source doesn't work anymore, reset it
-		ts.ts = nil
 	}
 
 	return token, err
