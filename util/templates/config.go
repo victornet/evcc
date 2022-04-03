@@ -23,8 +23,8 @@ type ConfigDefaults struct {
 	DeviceGroups map[string]TextLanguage // Default device groups
 }
 
-// read the actual config into the struct, but only once
-func (c *ConfigDefaults) LoadDefaults() {
+// Load reads the actual config into the struct, but only once
+func (c *ConfigDefaults) Load() {
 	// if params are initialized, defaults have been loaded
 	if c.Params != nil {
 		return

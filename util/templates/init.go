@@ -12,7 +12,7 @@ import (
 
 var (
 	templates      = make(map[string][]Template)
-	configDefaults = ConfigDefaults{}
+	configDefaults ConfigDefaults
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 )
 
 func loadTemplates(class string) {
-	configDefaults.LoadDefaults()
+	configDefaults.Load()
 
 	if templates[class] != nil {
 		return
@@ -72,6 +72,11 @@ func loadTemplates(class string) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func Defaults() ConfigDefaults {
+	configDefaults.Load()
+	return configDefaults
 }
 
 func ByClass(class string) []Template {
