@@ -27,6 +27,7 @@ func init() {
 	rootCmd.AddCommand(chargerCmd)
 	chargerCmd.PersistentFlags().StringP(flagName, "n", "", fmt.Sprintf(flagNameDescription, "charger"))
 	chargerCmd.PersistentFlags().IntP(flagCurrent, "I", noCurrent, flagCurrentDescription)
+	chargerCmd.PersistentFlags().IntP(flagPhases, "p", 0, flagPhasesDescription)
 	//lint:ignore SA1019 as Title is safe on ascii
 	chargerCmd.PersistentFlags().BoolP(flagEnable, "e", false, strings.Title(flagEnable))
 	//lint:ignore SA1019 as Title is safe on ascii
@@ -81,6 +82,15 @@ func runCharger(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	var phases int
+	if flag := cmd.PersistentFlags().Lookup(flagPhases); flag.Changed {
+		var err error
+		phases, err = strconv.Atoi(flag.Value.String())
+		if err != nil {
+			log.ERROR.Fatalln(err)
+		}
+	}
+
 	var flagUsed bool
 	for _, v := range chargers {
 		if current != noCurrent {
@@ -88,6 +98,18 @@ func runCharger(cmd *cobra.Command, args []string) {
 
 			if err := v.MaxCurrent(current); err != nil {
 				log.ERROR.Println("set current:", err)
+			}
+		}
+
+		if phases > 0 {
+			flagUsed = true
+
+			if vv, ok := v.(api.ChargePhases); ok {
+				if err := vv.Phases1p3p(phases); err != nil {
+					log.ERROR.Println("set phases:", err)
+				}
+			} else {
+				log.ERROR.Println("phases: not implemented")
 			}
 		}
 
