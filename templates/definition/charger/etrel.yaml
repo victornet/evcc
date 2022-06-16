@@ -1,0 +1,16 @@
+template: etrel
+products:
+  - brand: Etrel
+    description:
+      generic: Inch
+  - brand: Sonnen
+    description:
+      generic: Charger
+requirements:
+  evcc: ["sponsorship"]
+params:
+  - name: modbus
+    choice: ["tcpip"]
+render: |
+  type: etrel
+  {{- include "modbus" . }}
