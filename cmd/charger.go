@@ -27,7 +27,7 @@ func init() {
 	rootCmd.AddCommand(chargerCmd)
 	chargerCmd.PersistentFlags().StringP(flagName, "n", "", fmt.Sprintf(flagNameDescription, "charger"))
 	chargerCmd.PersistentFlags().IntP(flagCurrent, "I", noCurrent, flagCurrentDescription)
-	chargerCmd.PersistentFlags().IntP(flagPhases, "p", 0, flagPhasesDescription)
+	chargerCmd.PersistentFlags().Int(flagPhases, 0, flagPhasesDescription)
 	//lint:ignore SA1019 as Title is safe on ascii
 	chargerCmd.PersistentFlags().BoolP(flagEnable, "e", false, strings.Title(flagEnable))
 	//lint:ignore SA1019 as Title is safe on ascii

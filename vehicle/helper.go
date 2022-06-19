@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// ensureVehicleWithFeature extracts VIN from list of VINs returned from `list`` function
+// ensureVehicle extracts VIN from list of VINs returned from `list` function
 func ensureVehicle(vin string, list func() ([]string, error)) (string, error) {
 	vin, _, err := ensureVehicleWithFeature(vin, list, func(v string) (string, string) {
 		return v, ""
@@ -14,7 +14,7 @@ func ensureVehicle(vin string, list func() ([]string, error)) (string, error) {
 	return vin, err
 }
 
-// ensureVehicleWithFeature extracts VIN and feature from list of vehicles of type V returned from `list`` function
+// ensureVehicleWithFeature extracts VIN and feature from list of vehicles of type V returned from `list` function
 func ensureVehicleWithFeature[Vehicle, Feature any](
 	vin string,
 	list func() ([]Vehicle, error),
@@ -41,7 +41,7 @@ func ensureVehicleWithFeature[Vehicle, Feature any](
 			return vin, res, nil
 		}
 
-		err = fmt.Errorf("cannot find vehicle: %v", vehicles)
+		err = fmt.Errorf("cannot find vehicle, got: %v", vehicles)
 	}
 
 	return "", *new(Feature), err
