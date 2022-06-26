@@ -13,6 +13,7 @@ import (
 	"github.com/evcc-io/evcc/provider"
 	"github.com/evcc-io/evcc/util"
 	"github.com/evcc-io/evcc/util/request"
+	"github.com/evcc-io/evcc/vehicle/kamereon"
 	"golang.org/x/exp/slices"
 )
 
@@ -57,64 +58,6 @@ type gigyaData struct {
 	PersonID string `json:"personId"`
 }
 
-type kamereonResponse struct {
-	Accounts     []kamereonAccount `json:"accounts"`     // /commerce/v1/persons/%s
-	AccessToken  string            `json:"accessToken"`  // /commerce/v1/accounts/%s/kamereon/token
-	VehicleLinks []kamereonVehicle `json:"vehicleLinks"` // /commerce/v1/accounts/%s/vehicles
-	Data         kamereonData      `json:"data"`         // /commerce/v1/accounts/%s/kamereon/kca/car-adapter/vX/cars/%s/...
-}
-
-type kamereonAccount struct {
-	AccountID string `json:"accountId"`
-}
-
-type kamereonVehicle struct {
-	Brand           string          `json:"brand"`
-	VIN             string          `json:"vin"`
-	Status          string          `json:"status"`
-	ConnectedDriver connectedDriver `json:"ConnectedDriver"`
-}
-
-func (v *kamereonVehicle) Available() error {
-	if strings.ToUpper(v.Status) != "ACTIVE" {
-		return errors.New("vehicle is not active")
-	}
-
-	if len(v.ConnectedDriver.Role) == 0 {
-		return errors.New("vehicle is not connected to driver")
-	}
-
-	return nil
-}
-
-type connectedDriver struct {
-	Role string `json:"role"`
-}
-
-type kamereonData struct {
-	Attributes attributes `json:"attributes"`
-}
-
-type attributes struct {
-	// battery-status
-	Timestamp          string  `json:"timestamp"`
-	ChargingStatus     float32 `json:"chargingStatus"`
-	InstantaneousPower int     `json:"instantaneousPower"`
-	RangeHvacOff       int     `json:"rangeHvacOff"`
-	BatteryAutonomy    int     `json:"batteryAutonomy"`
-	BatteryLevel       int     `json:"batteryLevel"`
-	BatteryTemperature int     `json:"batteryTemperature"`
-	PlugStatus         int     `json:"plugStatus"`
-	LastUpdateTime     string  `json:"lastUpdateTime"`
-	ChargePower        int     `json:"chargePower"`
-	RemainingTime      *int    `json:"chargingRemainingTime"`
-	// hvac-status
-	ExternalTemperature float64 `json:"externalTemperature"`
-	HvacStatus          string  `json:"hvacStatus"`
-	// cockpit
-	TotalMileage float64 `json:"totalMileage"`
-}
-
 // Renault is an api.Vehicle implementation for Renault cars
 type Renault struct {
 	*embed
@@ -123,9 +66,9 @@ type Renault struct {
 	gigya, kamereon     configServer
 	gigyaJwtToken       string
 	accountID           string
-	batteryG            func() (kamereonResponse, error)
-	cockpitG            func() (kamereonResponse, error)
-	hvacG               func() (kamereonResponse, error)
+	batteryG            func() (kamereon.Response, error)
+	cockpitG            func() (kamereon.Response, error)
+	hvacG               func() (kamereon.Response, error)
 }
 
 func init() {
@@ -162,13 +105,13 @@ func NewRenaultFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 		err = v.authFlow()
 	}
 
-	var car kamereonVehicle
+	var car kamereon.Vehicle
 	if err == nil {
 		v.vin, car, err = ensureVehicleWithFeature(cc.VIN,
-			func() ([]kamereonVehicle, error) {
+			func() ([]kamereon.Vehicle, error) {
 				return v.kamereonVehicles(v.accountID)
 			},
-			func(v kamereonVehicle) (string, kamereonVehicle) {
+			func(v kamereon.Vehicle) (string, kamereon.Vehicle) {
 				return v.VIN, v
 			},
 		)
@@ -308,14 +251,14 @@ func (v *Renault) jwtToken(sessionCookie string) (string, error) {
 	return res.IDToken, err
 }
 
-func (v *Renault) kamereonRequest(uri string, body io.Reader) (kamereonResponse, error) {
+func (v *Renault) kamereonRequest(uri string, body io.Reader) (kamereon.Response, error) {
 	params := url.Values{"country": []string{"DE"}}
 	headers := map[string]string{
 		"x-gigya-id_token": v.gigyaJwtToken,
 		"apikey":           v.kamereon.APIKey,
 	}
 
-	var res kamereonResponse
+	var res kamereon.Response
 	req, err := v.request(uri, params, body, headers)
 	if err == nil {
 		err = v.DoJSON(req, &res)
@@ -335,14 +278,14 @@ func (v *Renault) kamereonPerson(personID string) (string, error) {
 	return res.Accounts[0].AccountID, err
 }
 
-func (v *Renault) kamereonVehicles(configVIN string) ([]kamereonVehicle, error) {
+func (v *Renault) kamereonVehicles(configVIN string) ([]kamereon.Vehicle, error) {
 	uri := fmt.Sprintf("%s/commerce/v1/accounts/%s/vehicles", v.kamereon.Target, v.accountID)
 	res, err := v.kamereonRequest(uri, nil)
 	return res.VehicleLinks, err
 }
 
 // batteryAPI provides battery-status api response
-func (v *Renault) batteryAPI() (kamereonResponse, error) {
+func (v *Renault) batteryAPI() (kamereon.Response, error) {
 	uri := fmt.Sprintf("%s/commerce/v1/accounts/%s/kamereon/kca/car-adapter/v2/cars/%s/battery-status", v.kamereon.Target, v.accountID, v.vin)
 	res, err := v.kamereonRequest(uri, nil)
 
@@ -357,7 +300,7 @@ func (v *Renault) batteryAPI() (kamereonResponse, error) {
 }
 
 // hvacAPI provides hvac-status api response
-func (v *Renault) hvacAPI() (kamereonResponse, error) {
+func (v *Renault) hvacAPI() (kamereon.Response, error) {
 	uri := fmt.Sprintf("%s/commerce/v1/accounts/%s/kamereon/kca/car-adapter/v1/cars/%s/hvac-status", v.kamereon.Target, v.accountID, v.vin)
 	res, err := v.kamereonRequest(uri, nil)
 
@@ -372,7 +315,7 @@ func (v *Renault) hvacAPI() (kamereonResponse, error) {
 }
 
 // cockpitAPI provides cockpit api response
-func (v *Renault) cockpitAPI() (kamereonResponse, error) {
+func (v *Renault) cockpitAPI() (kamereon.Response, error) {
 	uri := fmt.Sprintf("%s/commerce/v1/accounts/%s/kamereon/kca/car-adapter/v2/cars/%s/cockpit", v.kamereon.Target, v.accountID, v.vin)
 	res, err := v.kamereonRequest(uri, nil)
 
