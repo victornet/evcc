@@ -73,6 +73,11 @@ func runDump(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	// TODO align indexing with meters
+	for id, v := range site.GetVehicles() {
+		d.DumpWithHeader(fmt.Sprintf("vehicle: %d", id), v)
+	}
+
 	for id, lpI := range site.LoadPoints() {
 		lp := lpI.(*core.LoadPoint)
 
@@ -85,10 +90,6 @@ func runDump(cmd *cobra.Command, args []string) {
 
 		if name := lp.ChargerRef; name != "" {
 			d.DumpWithHeader(fmt.Sprintf("charger: %s", name), cp.Charger(name))
-		}
-
-		for id, v := range lp.VehiclesRef {
-			d.DumpWithHeader(fmt.Sprintf("vehicle %d", id), cp.Vehicle(v))
 		}
 	}
 }
