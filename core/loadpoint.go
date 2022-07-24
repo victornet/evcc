@@ -533,7 +533,7 @@ func (lp *LoadPoint) Prepare(uiChan chan<- util.Param, pushChan chan<- push.Even
 	// activate default vehicle (allows poll mode: always)
 	if lp.defaultVehicle != nil {
 		lp.setActiveVehicle(lp.defaultVehicle)
-	} else if len(lp.coordinator.GetVehicles()) > 0 {
+	} else if len(lp.coordinatedVehicles()) > 0 {
 		lp.startVehicleDetection()
 	}
 
@@ -874,7 +874,7 @@ func (lp *LoadPoint) stopVehicleDetection() {
 
 // vehicleUnidentified checks if there are associated vehicles and starts discovery period
 func (lp *LoadPoint) vehicleUnidentified() bool {
-	res := len(lp.coordinator.GetVehicles()) > 0 && lp.vehicle == nil &&
+	res := len(lp.coordinatedVehicles()) > 0 && lp.vehicle == nil &&
 		lp.clock.Since(lp.vehicleConnected) < vehicleDetectDuration
 
 	// request vehicle api refresh while waiting to identify
@@ -1140,9 +1140,17 @@ func (lp *LoadPoint) pvScalePhases(availablePower, minCurrent, maxCurrent float6
 	return false
 }
 
+// coordinatedVehicles is the slice of vehicles from the coordinator
+func (lp *LoadPoint) coordinatedVehicles() []api.Vehicle {
+	if lp.coordinator == nil {
+		return nil
+	}
+	return lp.coordinator.GetVehicles()
+}
+
 // publishVehicles publishes a slice of vehicle titles
 func (lp *LoadPoint) publishVehicles() {
-	lp.publish("vehicles", vehicleTitles(lp.coordinator.GetVehicles()))
+	lp.publish("vehicles", vehicleTitles(lp.coordinatedVehicles()))
 }
 
 // TODO move up to timer functions
