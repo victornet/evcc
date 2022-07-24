@@ -73,9 +73,8 @@ func runDump(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// TODO align indexing with meters
-	for id, v := range site.GetVehicles() {
-		d.DumpWithHeader(fmt.Sprintf("vehicle: %d", id), v)
+	for _, v := range site.GetVehicles() {
+		d.DumpWithHeader(fmt.Sprintf("vehicle: %s", v.Title()), v)
 	}
 
 	for id, lpI := range site.LoadPoints() {
