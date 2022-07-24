@@ -256,8 +256,8 @@ func NewLoadPoint(log *util.Logger) *LoadPoint {
 		Disable:       ThresholdConfig{Delay: 3 * time.Minute, Threshold: 0}, // t, W
 		GuardDuration: 5 * time.Minute,
 		progress:      NewProgress(0, 10),     // soc progress indicator
-		tasks:         aq.New(),               // task queue
 		coordinator:   coordinator.NewDummy(), // dummy vehicle coordinator
+		tasks:         aq.New(),               // task queue
 	}
 
 	// allow target charge handler to access loadpoint
@@ -404,7 +404,7 @@ func (lp *LoadPoint) evVehicleConnectHandler() {
 	// start detection if we have associated vehicles
 	if lp.vehicle == lp.defaultVehicle {
 		lp.setActiveVehicle(lp.defaultVehicle)
-	} else if len(lp.coordinator.GetVehicles()) > 0 {
+	} else if len(lp.coordinatedVehicles()) > 0 {
 		lp.startVehicleDetection()
 	}
 
@@ -750,7 +750,7 @@ func (lp *LoadPoint) identifyVehicle() {
 
 // selectVehicleByID selects the vehicle with the given ID
 func (lp *LoadPoint) selectVehicleByID(id string) api.Vehicle {
-	vehicles := lp.coordinator.GetVehicles()
+	vehicles := lp.coordinatedVehicles()
 
 	// find exact match
 	for _, vehicle := range vehicles {
@@ -892,7 +892,7 @@ func (lp *LoadPoint) vehicleUnidentified() bool {
 
 // identifyVehicleByStatus validates if the active vehicle is still connected to the loadpoint
 func (lp *LoadPoint) identifyVehicleByStatus() {
-	if len(lp.coordinator.GetVehicles()) == 0 {
+	if len(lp.coordinatedVehicles()) == 0 {
 		return
 	}
 
