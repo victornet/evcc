@@ -7,6 +7,7 @@ import (
 	evbus "github.com/asaskevich/EventBus"
 	"github.com/benbjohnson/clock"
 	"github.com/evcc-io/evcc/api"
+	"github.com/evcc-io/evcc/core/coordinator"
 	"github.com/evcc-io/evcc/core/soc"
 	"github.com/evcc-io/evcc/mock"
 	"github.com/evcc-io/evcc/push"
@@ -820,9 +821,10 @@ func TestVehicleDetectByID(t *testing.T) {
 		t.Logf("%+v", tc)
 
 		lp := &LoadPoint{
-			log:      util.NewLogger("foo"),
-			vehicles: []api.Vehicle{v1, v2},
+			log: util.NewLogger("foo"),
 		}
+
+		lp.coordinator = coordinator.NewAdapter(lp, coordinator.New(util.NewLogger("foo"), []api.Vehicle{v1, v2}))
 
 		if tc.prepare != nil {
 			tc.prepare(tc)

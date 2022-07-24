@@ -8,6 +8,7 @@ import (
 	evbus "github.com/asaskevich/EventBus"
 	"github.com/benbjohnson/clock"
 	"github.com/evcc-io/evcc/api"
+	"github.com/evcc-io/evcc/core/coordinator"
 	"github.com/evcc-io/evcc/mock"
 	"github.com/evcc-io/evcc/util"
 	"github.com/golang/mock/gomock"
@@ -192,6 +193,7 @@ func TestPvScalePhases(t *testing.T) {
 			vehicle:       vehicle,
 			DefaultPhases: 0, // allow switching
 			phases:        tc.physical,
+			coordinator:   coordinator.NewDummy(),
 		}
 
 		if phaseCharger != nil {
